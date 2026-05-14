@@ -1,0 +1,22 @@
+name: node
+displayName: Node.js
+category: Runtime
+version: "20.x"
+id: node
+dependencies: []
+platforms:
+  macos:
+    manager: brew
+    command: "brew install node@20"
+    verify: "node --version"
+  linux:
+    manager: apt
+    command: "curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt-get install -y nodejs"
+    verify: "node --version"
+  windows:
+    manager: winget
+    command: "winget install OpenJS.NodeJS.LTS"
+    verify: "node --version"
+license:
+  type: open-source
+  spdx: MIT

@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out-tsc/
+
+# Database
+backend/data/*.db
+
+# Environment
+.env
+.env.local
+
+# IDE
+.idea/
+*.swp
+*.swo
+.vscode/settings.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Angular
+.angular/
+
+# Coverage
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temp
+tmp/
