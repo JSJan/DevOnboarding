@@ -52,3 +52,28 @@ export interface InstallationProgress {
   log?: string;
   error?: string;
 }
+
+export interface RolePreset {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  softwareIds: string[];
+}
+
+export interface TimeEstimate {
+  softwareId: string;
+  displayName: string;
+  manualMinutes: number;
+  automatedMinutes: number;
+}
+
+export interface RoleDashboard {
+  role: RolePreset;
+  software: SoftwareItem[];
+  timeEstimates: TimeEstimate[];
+  totalManualMinutes: number;
+  totalAutomatedMinutes: number;
+  timeSavedMinutes: number;
+  timeSavedPercent: number;
+}

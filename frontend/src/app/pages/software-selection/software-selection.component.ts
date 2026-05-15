@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { CatalogService } from '../../services/catalog.service';
 import { InstallationService } from '../../services/installation.service';
+import { DashboardService } from '../../services/dashboard.service';
 import { SoftwareItem, Platform, VersionCheckResult } from '../../models/types';
 
 @Component({
@@ -31,11 +32,19 @@ import { SoftwareItem, Platform, VersionCheckResult } from '../../models/types';
       <!-- Software Selection -->
       <section class="section">
         <h3>2. Select software to install</h3>
-        <div class="controls">
+        <div *ngIf="loadingCatalog" class="spinner-container">
+          <div class="spinner"></div>
+          <span>Loading software catalog...</span>
+        </div>
+        <div *ngIf="loadingVersions && !loadingCatalog" class="spinner-inline">
+          <div class="spinner small"></div>
+          <span>Checking installed versions...</span>
+        </div>
+        <div class="controls" *ngIf="!loadingCatalog">
           <button (click)="selectAll()" class="btn-sm">Select All</button>
           <button (click)="deselectAll()" class="btn-sm">Deselect All</button>
         </div>
-        <div class="software-grid">
+        <div class="software-grid" *ngIf="!loadingCatalog">
           <div
             *ngFor="let item of catalog"
             class="software-card"
@@ -122,6 +131,23 @@ import { SoftwareItem, Platform, VersionCheckResult } from '../../models/types';
       border-radius: 8px; font-size: 1rem; cursor: pointer;
     }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Spinner */
+    .spinner-container {
+      display: flex; align-items: center; gap: 12px;
+      padding: 32px; justify-content: center;
+    }
+    .spinner-inline {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 12px; font-size: 0.9rem; color: #666;
+    }
+    .spinner {
+      width: 32px; height: 32px; border: 3px solid #e0e0e0;
+      border-top-color: #0f3460; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .spinner.small { width: 18px; height: 18px; border-width: 2px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   `]
 })
 export class SoftwareSelectionComponent implements OnInit {
@@ -129,6 +155,8 @@ export class SoftwareSelectionComponent implements OnInit {
   selectedSoftware: string[] = [];
   selectedPlatform: Platform = 'macos';
   isLoading = false;
+  loadingCatalog = true;
+  loadingVersions = true;
   versionMap: Map<string, string | null> = new Map();
 
   platforms = [
@@ -140,12 +168,22 @@ export class SoftwareSelectionComponent implements OnInit {
   constructor(
     private catalogService: CatalogService,
     private installationService: InstallationService,
-    private router: Router
+    private dashboardService: DashboardService,
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.catalogService.getAll().subscribe((items) => {
       this.catalog = items;
+      this.loadingCatalog = false;
+      // If navigated from role dashboard, pre-select software for that role
+      const roleId = this.route.snapshot.queryParamMap.get('role');
+      if (roleId) {
+        this.dashboardService.getRoleDashboard(roleId).subscribe((dashboard) => {
+          this.selectedSoftware = dashboard.software.map((s) => s.id);
+        });
+      }
     });
     this.detectPlatform();
     this.loadVersions();
@@ -159,11 +197,13 @@ export class SoftwareSelectionComponent implements OnInit {
   }
 
   private loadVersions(): void {
+    this.loadingVersions = true;
     this.catalogService.checkVersions(this.selectedPlatform).subscribe((results) => {
       this.versionMap.clear();
       for (const r of results) {
         this.versionMap.set(r.softwareId, r.currentVersion);
       }
+      this.loadingVersions = false;
     });
   }
 

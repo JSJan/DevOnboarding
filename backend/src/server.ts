@@ -5,6 +5,7 @@ import { installationRoutes } from './routes/installation.routes';
 import { catalogRoutes } from './routes/catalog.routes';
 import { licenseRoutes } from './routes/license.routes';
 import { versionCheckRoutes } from './routes/version-check.routes';
+import { dashboardRoutes } from './routes/dashboard.routes';
 import { setupSocketHandlers } from './websocket/socket.handler';
 import { initDatabase } from './database/db';
 
@@ -23,6 +24,7 @@ async function bootstrap() {
   await app.register(installationRoutes, { prefix: '/api/installations' });
   await app.register(licenseRoutes, { prefix: '/api/licenses' });
   await app.register(versionCheckRoutes, { prefix: '/api/version-check' });
+  await app.register(dashboardRoutes, { prefix: '/api/dashboard' });
 
   // Health check
   app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
