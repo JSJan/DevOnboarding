@@ -212,17 +212,17 @@ Internal use only.
 
 1. Backend → Render (Free)
 
-Go to render.com → Sign up with GitHub
-Click New+ → Blueprint → Select your repo
-Render will auto-detect render.yaml and deploy
-Copy your Deploy Hook URL from Settings → Add as RENDER_DEPLOY_HOOK_URL GitHub secret
+- Go to render.com → Sign up with GitHub
+- Click New+ → Blueprint → Select your repo
+- Render will auto-detect render.yaml and deploy
+- Copy your Deploy Hook URL from Settings → Add as RENDER_DEPLOY_HOOK_URL GitHub secret
 
 2. Frontend → Vercel (Free)
 
-Go to vercel.com → Import your repo
-Set root directory to frontend
-Get your token from vercel.com/account/tokens
-Add GitHub secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+- Go to vercel.com → Import your repo
+- Set root directory to frontend
+- Get your token from vercel.com/account/tokens
+- Add GitHub secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
 
 
 3. Update API URL
