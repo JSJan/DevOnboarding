@@ -225,3 +225,8 @@ Add GitHub secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
 
 Update API URL
 Edit environment.prod.ts:8-9 with your actual Render service URL before deploying frontend.
+
+
+Open api 
+
+https://dev-onboarding-api-v5n9.onrender.com/api/openapi.yaml

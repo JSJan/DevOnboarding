@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import { readFile } from 'node:fs/promises';
 import { Server } from 'socket.io';
 import { installationRoutes } from './routes/installation.routes';
 import { catalogRoutes } from './routes/catalog.routes';
@@ -28,6 +29,16 @@ async function bootstrap() {
 
   // Health check
   app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
+
+  // OpenAPI specification
+  app.get('/api/openapi.yaml', async (_request, reply) => {
+    try {
+      const spec = await readFile(`${process.cwd()}/openapi.yaml`, 'utf8');
+      return reply.type('application/yaml').send(spec);
+    } catch {
+      return reply.status(404).send({ error: 'OpenAPI spec not found' });
+    }
+  });
 
   // Start HTTP server
   await app.listen({ port: PORT, host: '0.0.0.0' });

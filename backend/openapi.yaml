@@ -1,0 +1,550 @@
+openapi: 3.0.3
+info:
+  title: Dev Onboarding Backend API
+  version: 1.0.0
+  description: API specification for the Dev Onboarding backend service.
+servers:
+  - url: http://localhost:3001
+    description: Local development
+  - url: https://dev-onboarding-api-v5n9.onrender.com
+    description: Render deployment
+tags:
+  - name: Health
+  - name: Catalog
+  - name: Dashboard
+  - name: Installations
+  - name: Licenses
+  - name: Version Check
+paths:
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/catalog:
+    get:
+      tags: [Catalog]
+      summary: List all available software
+      responses:
+        '200':
+          description: Software catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SoftwareItem'
+
+  /api/catalog/{id}:
+    get:
+      tags: [Catalog]
+      summary: Get software details by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Software details
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/SoftwareItem'
+                  - $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Software not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/catalog/platform/{platform}:
+    get:
+      tags: [Catalog]
+      summary: List software for a specific platform
+      parameters:
+        - in: path
+          name: platform
+          required: true
+          schema:
+            $ref: '#/components/schemas/Platform'
+      responses:
+        '200':
+          description: Platform-specific software list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SoftwareItem'
+
+  /api/dashboard:
+    get:
+      tags: [Dashboard]
+      summary: Get all role dashboards
+      responses:
+        '200':
+          description: Role dashboard overview
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoleDashboard'
+
+  /api/dashboard/roles:
+    get:
+      tags: [Dashboard]
+      summary: List all role presets
+      responses:
+        '200':
+          description: Role presets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RolePreset'
+
+  /api/dashboard/roles/{roleId}:
+    get:
+      tags: [Dashboard]
+      summary: Get dashboard for a specific role
+      parameters:
+        - in: path
+          name: roleId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dashboard data for role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleDashboard'
+        '404':
+          description: Role not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/installations:
+    post:
+      tags: [Installations]
+      summary: Create a new installation session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInstallationRequest'
+      responses:
+        '201':
+          description: Installation session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstallationRequest'
+        '400':
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/installations/{id}:
+    get:
+      tags: [Installations]
+      summary: Get installation status/details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Installation details
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/InstallationRequest'
+                  - type: 'null'
+
+  /api/installations/{id}/start:
+    post:
+      tags: [Installations]
+      summary: Start an installation
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Installation started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Installation started
+                  installationId:
+                    type: string
+        '404':
+          description: Installation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/installations/{id}/retry/{taskId}:
+    post:
+      tags: [Installations]
+      summary: Retry a failed installation task
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Retry result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/installations/{id}/logs:
+    get:
+      tags: [Installations]
+      summary: Get installation logs
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Installation logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /api/licenses/validate:
+    post:
+      tags: [Licenses]
+      summary: Validate licenses for selected software
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [softwareIds]
+              properties:
+                softwareIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: License validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /api/licenses/{softwareId}:
+    get:
+      tags: [Licenses]
+      summary: Get license info for specific software
+      parameters:
+        - in: path
+          name: softwareId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: License details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LicenseInfo'
+
+  /api/version-check/{platform}:
+    get:
+      tags: [Version Check]
+      summary: Check all software versions for a platform
+      parameters:
+        - in: path
+          name: platform
+          required: true
+          schema:
+            $ref: '#/components/schemas/Platform'
+      responses:
+        '200':
+          description: Version check results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+        '400':
+          description: Invalid platform
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/version-check/{platform}/{softwareId}:
+    get:
+      tags: [Version Check]
+      summary: Check version for one software item on a platform
+      parameters:
+        - in: path
+          name: platform
+          required: true
+          schema:
+            $ref: '#/components/schemas/Platform'
+        - in: path
+          name: softwareId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Version check result
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '404':
+          description: Software not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Platform:
+      type: string
+      enum: [macos, linux, windows]
+
+    InstallStatus:
+      type: string
+      enum: [pending, in-progress, completed, failed, skipped]
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    PlatformInstall:
+      type: object
+      required: [manager, command, verify]
+      properties:
+        manager:
+          type: string
+        command:
+          type: string
+        verify:
+          type: string
+
+    LicenseInfo:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [open-source, commercial]
+        spdx:
+          type: string
+        requiresKey:
+          type: boolean
+
+    SoftwareItem:
+      type: object
+      required: [id, name, displayName, category, version, dependencies, platforms, license]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        displayName:
+          type: string
+        category:
+          type: string
+        version:
+          type: string
+        dependencies:
+          type: array
+          items:
+            type: string
+        platforms:
+          type: object
+          properties:
+            macos:
+              $ref: '#/components/schemas/PlatformInstall'
+            linux:
+              $ref: '#/components/schemas/PlatformInstall'
+            windows:
+              $ref: '#/components/schemas/PlatformInstall'
+          additionalProperties: false
+        license:
+          $ref: '#/components/schemas/LicenseInfo'
+
+    InstallationRequest:
+      type: object
+      required: [id, platform, selectedSoftware, createdAt]
+      properties:
+        id:
+          type: string
+        platform:
+          $ref: '#/components/schemas/Platform'
+        selectedSoftware:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateInstallationRequest:
+      type: object
+      required: [platform, selectedSoftware]
+      properties:
+        platform:
+          $ref: '#/components/schemas/Platform'
+        selectedSoftware:
+          type: array
+          minItems: 1
+          items:
+            type: string
+
+    InstallationTask:
+      type: object
+      required: [id, installationId, softwareId, status, logs]
+      properties:
+        id:
+          type: string
+        installationId:
+          type: string
+        softwareId:
+          type: string
+        status:
+          $ref: '#/components/schemas/InstallStatus'
+        logs:
+          type: array
+          items:
+            type: string
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        error:
+          type: string
+
+    RolePreset:
+      type: object
+      required: [id, name, description, icon, softwareIds]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        softwareIds:
+          type: array
+          items:
+            type: string
+
+    TimeEstimate:
+      type: object
+      required: [softwareId, displayName, manualMinutes, automatedMinutes]
+      properties:
+        softwareId:
+          type: string
+        displayName:
+          type: string
+        manualMinutes:
+          type: number
+        automatedMinutes:
+          type: number
+
+    RoleDashboard:
+      type: object
+      required:
+        - role
+        - software
+        - timeEstimates
+        - totalManualMinutes
+        - totalAutomatedMinutes
+        - timeSavedMinutes
+        - timeSavedPercent
+      properties:
+        role:
+          $ref: '#/components/schemas/RolePreset'
+        software:
+          type: array
+          items:
+            $ref: '#/components/schemas/SoftwareItem'
+        timeEstimates:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeEstimate'
+        totalManualMinutes:
+          type: number
+        totalAutomatedMinutes:
+          type: number
+        timeSavedMinutes:
+          type: number
+        timeSavedPercent:
+          type: number
