@@ -1,0 +1,143 @@
+name: CD - Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  # Build job - reusable build step
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      # Backend build
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: ./backend
+
+      - name: Build backend
+        run: npm run build
+        working-directory: ./backend
+
+      # Frontend build
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: ./frontend
+
+      - name: Build frontend for production
+        run: npm run build -- --configuration=production
+        working-directory: ./frontend
+
+      # Upload artifacts
+      - name: Upload backend artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dist
+          path: backend/dist
+          retention-days: 1
+
+      - name: Upload frontend artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 1
+
+  # Deploy to staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event.inputs.environment == 'staging' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+
+    steps:
+      - name: Download backend artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-dist
+          path: backend/dist
+
+      - name: Download frontend artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+      # TODO: Add your deployment steps here
+      # Examples:
+      # - Deploy to AWS (S3, EC2, ECS, Lambda)
+      # - Deploy to Azure (App Service, Static Web Apps)
+      # - Deploy to Google Cloud (Cloud Run, App Engine)
+      # - Deploy to Docker/Kubernetes
+      # - Deploy to Vercel/Netlify (frontend)
+      # - Deploy to Heroku/Railway (backend)
+
+      - name: Deploy to staging (placeholder)
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          echo "Backend artifacts ready in: backend/dist"
+          echo "Frontend artifacts ready in: frontend/dist"
+          echo ""
+          echo "⚠️  Configure your deployment steps in this workflow file"
+          echo "   See comments above for deployment options"
+
+  # Deploy to production (manual trigger only)
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event.inputs.environment == 'production'
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+
+    steps:
+      - name: Download backend artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-dist
+          path: backend/dist
+
+      - name: Download frontend artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+      # TODO: Add your production deployment steps here
+      - name: Deploy to production (placeholder)
+        run: |
+          echo "🚀 Deploying to production environment..."
+          echo "Backend artifacts ready in: backend/dist"
+          echo "Frontend artifacts ready in: frontend/dist"
+          echo ""
+          echo "⚠️  Configure your deployment steps in this workflow file"
